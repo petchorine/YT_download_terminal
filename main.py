@@ -75,133 +75,72 @@ def choice_audio_or_video():
 
 def resolution_choice(choice_media_type, playlist, user_url_input):
     if choice_media_type == "1":
-        show_video_choice(playlist)
-
+        quality = ("qualité optimale", "qualité moyenne", "qualité minimale")
+        print(f"""
+Choisissez la qualité des médias à télécharger :
+1 - {quality[0]}
+2 - {quality[1]}
+3 - {quality[2]}
+        """)
+        user_quality_choice = input("=> ")
+        print(f"Tu as choisi : {quality[int(user_quality_choice) - 1]}")
     elif choice_media_type == "2":
         download_audio(playlist, user_url_input)
 
-def show_video_choice(playlist):
-    all_resolutions = []
-    list_of_sorted_streams = []
+# url_input = "https://www.youtube.com/watch?v=iiryoHtOe7g"
+# url_input = "https://www.youtube.com/playlist?list=PL6wtbJKOh3fGOVxYNrL7nRQT6wcaThm7m"
 
-    for clip in playlist:
-        list_of_sorted_streams.append(clip.streams.filter(file_extension="mp4", type="video").order_by("resolution").desc())  
+# def show_video_choice(playlist, user_url_input):
+#     all_resolutions = []
+#     list_of_sorted_streams = []
+
+#     for clip in playlist:
+#         list_of_sorted_streams.append(clip.streams.filter(file_extension="mp4", type="video").order_by("resolution").desc())  
+#     print(list_of_sorted_streams)
+
+#     for sort_stream in list_of_sorted_streams:
+#         for resolution in sort_stream:
+#             all_resolutions.append(int(resolution.resolution[:-1]))
+
+#     resolutions = list(set(all_resolutions))
+#     resolutions.sort()
+
+#     print("\n")
+#     print("Voici les résolutions disponibles :")
+#     for idx, resolution in enumerate(resolutions):
+#         print(f"{idx + 1} - {resolution}p")
     
-    for sort_stream in list_of_sorted_streams:
-        for resolution in sort_stream:
-            all_resolutions.append(int(resolution.resolution[:-1]))
+#     print("\n")
+#     print("Dans quelle résolution souhaites-tu télécharger ta (tes) vidéos ?")
+#     print(f"Tape ton choix entre 1 et {len(resolutions)}.")
+#     user_resolution_choice = input("=> ")
 
-    # print(all_resolutions)
-    resolutions = list(set(all_resolutions))
-    resolutions.sort()
-
-    print("\n")
-    print("Voici les résolutions disponibles :")
-    for idx, resolution in enumerate(resolutions):
-        print(f"{idx + 1} - {resolution}p")
+#     print(f"Tu as choisi la résolution suivante : {resolutions[int(user_resolution_choice) - 1]}p.")
+#     print("\n")
     
-    print("\n")
-    print("Dans quelle résolution souhaites-tu télécharger ta (tes) vidéos ?")
-    print(f"Tape ton choix entre 1 et {len(resolutions)}.")
-    user_resolution_choice = input("=> ")
+#     # download_video(playlist, user_url_input)
 
-    print(f"Tu as choisi la résolution suivante : {resolutions[int(user_resolution_choice) - 1]}.")
-    print("\n")    
-    
-    
+def download_video(playlist, user_url_input):
+    print(playlist)
 
-
-
-
-
-
-    
-    
-    # dans une liste "all_resolutions", récupère pour chaque objet PyTube (résolution, is_progressive, itag
-    
-    # for stream in streams:
-    #     # dans PyTube, la résolution est un str => supprime le "p" et convertit en int
-    #     stream_resolution = int(stream.resolution[:-1])
-    #     all_resolutions.append((stream_resolution, stream.is_progressive, stream.itag))
-
-    # # dans une liste "selected_resolutions" => ajoute seulement résolutions voulues
-    # # si "<= 720p" alors ajoute les videos "progressives" plus rapides à charger (limité aux videos <= 720p)
-    # # si "> 720" alors ajoute les videos "adaptatives"
-    # # TO DO : il peut y avoir plusieurs fois la même résolution mais avec différents codecs...
-    # # ...supprimer les doublons ou les garder en affichant le codec à côté
-    # for i in range(len(all_resolutions)):
-    #     if (all_resolutions[i][0] > 720) or (all_resolutions[i][0] <= 720 and all_resolutions[i][1]):
-    #         selected_resolutions.append(all_resolutions[i])
-
-    # print(selected_resolutions)
-
-
-
-def download_audio(playlist_to_download, user_url_input):
-    all_audio_streams = []
-    
-    for clip in playlist_to_download:
-        audio_stream = clip.streams.filter(progressive=False, file_extension="mp4", type="audio").order_by(
-        "abr").desc()
-        all_audio_streams.append(audio_stream)
-
-    if playlist_or_not_playlist(user_url_input) == False:
-        for stream in all_audio_streams:
-            best_stream = stream[0]
-            print("Téléchargement...")
-            # TODO : je ne sais pas encore comment spécifier mon dossier de téléchargement
-            # sans doute avec le module os
-            # best_stream.download()
-            print("OK")
-    else:
-        best_stream = all_audio_streams[0][0]
-        print("Téléchargement...")
-        # best_stream.download()
-        print("OK")
-
-
-def main():
-    user_url_input = get_url_and_verify_integrity()
-    playlist_or_not_playlist(user_url_input)
-    playlist = show_playlist(user_url_input)
-    choice_media_type = choice_audio_or_video()
-    resolution_choice(choice_media_type, playlist, user_url_input)
-
-main()
-
-
-
-'''
-def download_video(self, instance):
-    # TO DO : amélioration du code pour ne pas toujours répéter cette url
-    url = url_input.text
-
-    itag = 0
-    resolution = 0
-
-    # sélectionne la résolution correspondant à index de la checkbox active
-    for i in range(len(tab_ck)):
-        if tab_ck[i].active:
-            itag = selected_resolutions[i][2]
-            resolution = selected_resolutions[i][0]
-
-    # TO DO : Voir comment je gère la résolution de chaque vidéo dans une playlist
     # POUR PLAYLIST
-    if "playlist" in url:
+    if "playlist" in user_url_input:
         print("je suis une playlist video")
-        p = Playlist(url)
+        p = Playlist(user_url_input)
         for url in p.video_urls:
             youtube_video = YouTube(url)
-            stream = youtube_video.streams.get_by_itag(itag)
+            print(youtube_video)
+            # stream = youtube_video.streams.get_by_itag(itag)
             print(f"Téléchargement...")
             # stream.download()
             print("OK")
     else:
+        print("je suis une video unique") 
         # POUR VIDEO UNIQUE
-        youtube_video = YouTube(url)
+        youtube_video = YouTube(user_url_input)
 
         # appel de la méthode "on_download_progress" qui permet l'affichage de la progression
-        youtube_video.register_on_progress_callback(on_download_progress)
+        # youtube_video.register_on_progress_callback(on_download_progress)
 
         for i in range(len(selected_resolutions)):
             # si resolution <= 720p alors charge la video progressive
@@ -244,6 +183,48 @@ def download_video(self, instance):
                 os.rmdir("video")
 
                 break
+
+
+
+
+
+
+
+def download_audio(playlist_to_download, user_url_input):
+    all_audio_streams = []
+    
+    for clip in playlist_to_download:
+        audio_stream = clip.streams.filter(progressive=False, file_extension="mp4", type="audio").order_by(
+        "abr").desc()
+        all_audio_streams.append(audio_stream)
+
+    if playlist_or_not_playlist(user_url_input) == False:
+        for stream in all_audio_streams:
+            best_stream = stream[0]
+            print("Téléchargement...")
+            # TODO : je ne sais pas encore comment spécifier mon dossier de téléchargement
+            # sans doute avec le module os
+            # best_stream.download()
+            print("OK")
+    else:
+        best_stream = all_audio_streams[0][0]
+        print("Téléchargement...")
+        # best_stream.download()
+        print("OK")
+
+
+def main():
+    user_url_input = get_url_and_verify_integrity()
+    playlist_or_not_playlist(user_url_input)
+    playlist = show_playlist(user_url_input)
+    choice_media_type = choice_audio_or_video()
+    resolution_choice(choice_media_type, playlist, user_url_input)
+
+main()
+
+
+
+'''
 
 
 
