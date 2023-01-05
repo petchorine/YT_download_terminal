@@ -29,7 +29,7 @@ def get_url_and_verify_integrity():
     return user_url
 
 
-def playlist_or_not_playlist(url):
+def is_not_playlist(url):
     if "playlist" not in url:
         return True
     else:
@@ -38,7 +38,7 @@ def playlist_or_not_playlist(url):
 
 def show_playlist(url):
     playlist_youtube_video = []
-    if playlist_or_not_playlist(url) == True:
+    if is_not_playlist(url) == True:
         youtube_video = YouTube(url)
         playlist_youtube_video.append(youtube_video)
     else:
@@ -83,6 +83,7 @@ def resolution_choice(choice_media_type, playlist, user_url_input):
         print(f"3 - {quality[2]}")
         user_quality_choice = int(input("=> "))
         print(f"Tu as choisi : {quality[user_quality_choice - 1]}")
+        print("\n")
         download_video(playlist, user_url_input, user_quality_choice)
     elif choice_media_type == "2":
         download_audio(playlist, user_url_input)
@@ -106,9 +107,147 @@ def resolution_choice(choice_media_type, playlist, user_url_input):
 # 	téléchargement stream[-1]
 
 
-def download_video(playlist, user_url_input, user_quality_choice):
+def download_video(playlist, user_url_input, user_quality_choice):    
+    if user_quality_choice == 1:
+        resolutions_list = []
+        for clip in playlist:
+            resolutions_list.append(clip.streams.filter(progressive=False, file_extension="mp4", type="video").order_by("resolution").desc())
+        best_resolutions_list = []
+        for idx in range(len(resolutions_list)):
+            best_video_stream = resolutions_list[idx][0]
+            best_resolutions_list.append(best_video_stream)         
+            # TODO : envoie la liste "best_resolutions_list" vers le telechargement
+    elif user_quality_choice == 2:
+        resolutions_list = []
+        for clip in playlist:
+            resolutions_list.append(clip.streams.filter(progressive=True, file_extension="mp4", type="video").order_by("resolution").desc())  
+        medium_resolutions_list = []
+        for idx in range(len(resolutions_list)):
+            medium_video_stream = resolutions_list[idx][0]
+            medium_resolutions_list.append(medium_video_stream)
+            # TODO : envoie la liste "medium_resolutions_list" vers le telechargement
+    elif user_quality_choice == 3:
+        resolutions_list = []
+        for clip in playlist:
+            resolutions_list.append(clip.streams.filter(progressive=True, file_extension="mp4", type="video").order_by("resolution").desc())  
+        lowest_resolutions_list = []
+        for idx in range(len(resolutions_list)):
+            lowest_video_stream = resolutions_list[idx][-1]
+            lowest_resolutions_list.append(lowest_video_stream)
+            # TODO : envoie la liste "lowest_resolutions_list" vers le telechargement
+
+        
+
+
+
     # POUR PLAYLIST
-    if "playlist" in user_url_input:
+    # if is_not_playlist(user_url_input) == False:
+    #     print("\n")
+    #     print("je suis une playlist video")
+    #     p = Playlist(user_url_input)
+    #     for url in p.video_urls:
+    #         youtube_video = YouTube(url)
+    #         print(youtube_video)
+    #         # stream = youtube_video.streams.get_by_itag(itag)
+    #         print(f"Téléchargement...")
+    #         # stream.download()
+    #         print("OK")
+    # else:
+    #     print("\n")
+    #     print("je suis une video unique") 
+        # POUR VIDEO UNIQUE
+    #     for i in range(len(selected_resolutions)):
+    #         # si resolution <= 720p alors charge la video progressive
+    #         if resolution <= 720:
+    #             stream = youtube_video.streams.get_by_itag(itag)
+    #             print(f"Téléchargement...")
+    #             stream.download()
+    #             print("OK")
+    #             break
+    #         else:
+    #             stream_video = youtube_video.streams.get_by_itag(itag)
+
+    #             streams = youtube_video.streams.filter(progressive=False, file_extension="mp4",
+    #                                                     type="audio").order_by("abr").desc()
+    #             best_audio_stream = streams[0]
+
+    #             # TELECHARGEMENT
+    #             print("Téléchargement video...")
+    #             stream_video.download("video")
+    #             print("OK")
+
+    #             print("Téléchargement audio...")
+    #             best_audio_stream.download("audio")
+    #             print("ok")
+
+
+
+
+
+
+
+
+def download_audio(playlist_audio_to_download, user_url_input):
+    all_audio_streams = []
+    
+    for clip in playlist_audio_to_download:
+        audio_stream = clip.streams.filter(progressive=False, file_extension="mp4", type="audio").order_by(
+        "abr").desc()
+        all_audio_streams.append(audio_stream)
+
+    if is_not_playlist(user_url_input) == False:
+        for stream in all_audio_streams:
+            best_stream = stream[0]
+            print("Téléchargement...")
+            # TODO : je ne sais pas encore comment spécifier mon dossier de téléchargement
+            # sans doute avec le module os
+            # best_stream.download()
+            print("OK")
+    else:
+        best_stream = all_audio_streams[0][0]
+        print("Téléchargement...")
+        # best_stream.download()
+        print("OK")
+
+
+def main():
+    user_url_input = get_url_and_verify_integrity()
+    is_not_playlist(user_url_input)
+    playlist = show_playlist(user_url_input)
+    choice_media_type = choice_audio_or_video()
+    resolution_choice(choice_media_type, playlist, user_url_input)
+
+main()
+
+
+
+'''
+
+
+
+# TO DO : affiche l'évolution du chargement dans des progress bar et labels
+# note : marche pour l'instant uniquement dans le terminal
+def on_download_progress(self, stream, chunk, bytes_remaining):
+    # octets qu'on a déjà téléchargés
+    bytes_downloaded = stream.filesize - bytes_remaining
+    # pourcentage des octets déjà téléchargés
+    percent = int(bytes_downloaded * 100 / stream.filesize)
+
+    print(percent)
+    print(f"Progression du téléchargement: {percent}% - {bytes_remaining}")
+
+    # TO DO : afficher l'évolution de la progress bar de chargement et du label
+    # ids.progress_stream_value.value = percent
+    # ids.progress_stream_label.text = f"{str(percent)}%"
+
+    # TO DO : si playlist alors afficher l'évolution de la progress bar (+label) du nbre de videos restant à charger
+
+
+
+
+
+# POUR PLAYLIST
+    if is_not_playlist(user_url_input) == False:
         print("\n")
         print("je suis une playlist video")
     #     p = Playlist(user_url_input)
@@ -123,8 +262,6 @@ def download_video(playlist, user_url_input, user_quality_choice):
         print("\n")
         print("je suis une video unique") 
         # POUR VIDEO UNIQUE
-    #     youtube_video = YouTube(user_url_input)
-
     #     # appel de la méthode "on_download_progress" qui permet l'affichage de la progression
     #     # youtube_video.register_on_progress_callback(on_download_progress)
 
@@ -169,68 +306,6 @@ def download_video(playlist, user_url_input, user_quality_choice):
     #             os.rmdir("video")
 
     #             break
-
-
-
-
-
-
-
-def download_audio(playlist_to_download, user_url_input):
-    all_audio_streams = []
-    
-    for clip in playlist_to_download:
-        audio_stream = clip.streams.filter(progressive=False, file_extension="mp4", type="audio").order_by(
-        "abr").desc()
-        all_audio_streams.append(audio_stream)
-
-    if playlist_or_not_playlist(user_url_input) == False:
-        for stream in all_audio_streams:
-            best_stream = stream[0]
-            print("Téléchargement...")
-            # TODO : je ne sais pas encore comment spécifier mon dossier de téléchargement
-            # sans doute avec le module os
-            # best_stream.download()
-            print("OK")
-    else:
-        best_stream = all_audio_streams[0][0]
-        print("Téléchargement...")
-        # best_stream.download()
-        print("OK")
-
-
-def main():
-    user_url_input = get_url_and_verify_integrity()
-    playlist_or_not_playlist(user_url_input)
-    playlist = show_playlist(user_url_input)
-    choice_media_type = choice_audio_or_video()
-    resolution_choice(choice_media_type, playlist, user_url_input)
-
-main()
-
-
-
-'''
-
-
-
-# TO DO : affiche l'évolution du chargement dans des progress bar et labels
-# note : marche pour l'instant uniquement dans le terminal
-def on_download_progress(self, stream, chunk, bytes_remaining):
-    # octets qu'on a déjà téléchargés
-    bytes_downloaded = stream.filesize - bytes_remaining
-    # pourcentage des octets déjà téléchargés
-    percent = int(bytes_downloaded * 100 / stream.filesize)
-
-    print(percent)
-    print(f"Progression du téléchargement: {percent}% - {bytes_remaining}")
-
-    # TO DO : afficher l'évolution de la progress bar de chargement et du label
-    # ids.progress_stream_value.value = percent
-    # ids.progress_stream_label.text = f"{str(percent)}%"
-
-    # TO DO : si playlist alors afficher l'évolution de la progress bar (+label) du nbre de videos restant à charger
-
 
 
 '''
