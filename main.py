@@ -1,5 +1,6 @@
 import os
 import ffmpeg
+import shutil
 
 from pytube import Playlist, YouTube
 
@@ -17,6 +18,7 @@ selected_resolutions = []
 
 def get_url_and_verify_integrity():
     while True:
+        print("\n")
         print("Copier-coller l'url de la video ou la playlist que vous souhaitez télécharger.")
         user_url = input("=> ")
         if user_url.startswith("https://www.youtube.com"):
@@ -73,7 +75,7 @@ def choice_audio_or_video():
         return user_choice
 
 
-def resolution_choice(choice_media_type, playlist, user_url_input):
+def resolution_choice(choice_media_type, playlist):
     if choice_media_type == "1":
         quality = ("qualité optimale", "qualité moyenne", "qualité minimale")
         print("\n")
@@ -86,7 +88,7 @@ def resolution_choice(choice_media_type, playlist, user_url_input):
         print("\n")
         get_resolutions_list(playlist, user_quality_choice)
     elif choice_media_type == "2":
-        download_audio(playlist, user_url_input)
+        download_audio(playlist)
 
 
 def get_resolutions_list(playlist, user_quality_choice):    
@@ -103,11 +105,11 @@ def get_resolutions_list(playlist, user_quality_choice):
             best_audio_stream = audio_stream_list[idx][0]
             best_audio_resolutions_list.append(best_audio_stream)      
         
-        best_video_resolutions_lit = []
+        best_video_resolutions_list = []
         for idx in range(len(video_stream_list)):
             best_video_stream = video_stream_list[idx][0]
-            best_video_resolutions_lit.append(best_video_stream)         
-        download_video(best_video_resolutions_lit, list_audio=best_audio_resolutions_list)
+            best_video_resolutions_list.append(best_video_stream)         
+        download_video(best_video_resolutions_list, list_audio=best_audio_resolutions_list)
     
     
     elif user_quality_choice == 2:
@@ -134,15 +136,16 @@ def get_resolutions_list(playlist, user_quality_choice):
 # url_input = "https://www.youtube.com/watch?v=LXb3EKWsInQ"
 
 def download_video(resolutions_list, list_audio=None):
+    # TELECHARGEMENT AUDIO
     if list_audio is not None:
         for best_audio in list_audio:
             print("Téléchargement audio...")
             best_audio.download("audio")
             print("ok")
-    
+
     for stream_video in resolutions_list:
-        if stream_video.is_progressive == False:        
-            # TELECHARGEMENT
+        if stream_video.is_progressive == False:                  
+            # TELECHARGEMENT VIDEO
             print("Téléchargement video...")
             stream_video.download("video")
             print("OK")
@@ -156,50 +159,41 @@ def download_video(resolutions_list, list_audio=None):
             ffmpeg.output(ffmpeg.input(audio_filename), ffmpeg.input(video_filename), output_filename,
                             vcodec="copy", acodec="copy", loglevel="quiet").run(overwrite_output=True)
             print("ok")
-
-            # à la fin de l'opération de combinaison => suppr. des fichiers/dossiers temporaires audio/video
-            os.remove(audio_filename)
-            os.remove(video_filename)
-            os.rmdir("audio")
-            os.rmdir("video")
-
-            break
-
         else:
             print(f"Téléchargement...")
             stream_video.download()
             print("OK")
+    # à la fin de l'opération de combinaison => suppr. des fichiers/dossiers temporaires audio/video
+    shutil.rmtree('audio')
+    shutil.rmtree('video')
 
 
-def download_audio(playlist_audio_to_download, user_url_input):
+def download_audio(playlist_audio_to_download):
     all_audio_streams = []
+    all_best_audio_streams = []
     
     for clip in playlist_audio_to_download:
         audio_stream = clip.streams.filter(progressive=False, file_extension="mp4", type="audio").order_by(
         "abr").desc()
         all_audio_streams.append(audio_stream)
 
-    if is_not_playlist(user_url_input) == False:
-        for stream in all_audio_streams:
-            best_stream = stream[0]
-            print("Téléchargement...")
-            # TODO : je ne sais pas encore comment spécifier mon dossier de téléchargement
-            # sans doute avec le module os
-            # best_stream.download()
-            print("OK")
-    else:
-        best_stream = all_audio_streams[0][0]
+    for stream in all_audio_streams:
+        best_stream = stream[0]
+        all_best_audio_streams.append(best_stream)
         print("Téléchargement...")
-        # best_stream.download()
+        # TODO : je ne sais pas encore comment spécifier mon dossier de téléchargement
+        # sans doute avec le module os
+        best_stream.download()
         print("OK")
 
+    return all_best_audio_streams
 
 def main():
     user_url_input = get_url_and_verify_integrity()
     is_not_playlist(user_url_input)
     playlist = show_playlist(user_url_input)
     choice_media_type = choice_audio_or_video()
-    resolution_choice(choice_media_type, playlist, user_url_input)
+    resolution_choice(choice_media_type, playlist)
 
 main()
 
@@ -225,71 +219,6 @@ def on_download_progress(self, stream, chunk, bytes_remaining):
     # ids.progress_stream_label.text = f"{str(percent)}%"
 
     # TO DO : si playlist alors afficher l'évolution de la progress bar (+label) du nbre de videos restant à charger
-
-
-
-
-
-# POUR PLAYLIST
-    if is_not_playlist(user_url_input) == False:
-        print("\n")
-        print("je suis une playlist video")
-    #     p = Playlist(user_url_input)
-    #     for url in p.video_urls:
-    #         youtube_video = YouTube(url)
-    #         print(youtube_video)
-    #         # stream = youtube_video.streams.get_by_itag(itag)
-    #         print(f"Téléchargement...")
-    #         # stream.download()
-    #         print("OK")
-    else:
-        print("\n")
-        print("je suis une video unique") 
-        # POUR VIDEO UNIQUE
-    #     # appel de la méthode "on_download_progress" qui permet l'affichage de la progression
-    #     # youtube_video.register_on_progress_callback(on_download_progress)
-
-    #     for i in range(len(selected_resolutions)):
-    #         # si resolution <= 720p alors charge la video progressive
-    #         if resolution <= 720:
-    #             stream = youtube_video.streams.get_by_itag(itag)
-    #             print(f"Téléchargement...")
-    #             stream.download()
-    #             print("OK")
-    #             break
-    #         else:
-    #             stream_video = youtube_video.streams.get_by_itag(itag)
-
-    #             streams = youtube_video.streams.filter(progressive=False, file_extension="mp4",
-    #                                                     type="audio").order_by("abr").desc()
-    #             best_audio_stream = streams[0]
-
-    #             # TELECHARGEMENT
-    #             print("Téléchargement video...")
-    #             stream_video.download("video")
-    #             print("OK")
-
-    #             print("Téléchargement audio...")
-    #             best_audio_stream.download("audio")
-    #             print("ok")
-
-    #             # COMBINAISON DES FICHIERS AUDIO ET VIDEO
-    #             audio_filename = os.path.join("audio", best_audio_stream.default_filename)
-    #             video_filename = os.path.join("video", stream_video.default_filename)
-    #             output_filename = stream_video.default_filename
-
-    #             print("Combinaison des fichiers...")
-    #             ffmpeg.output(ffmpeg.input(audio_filename), ffmpeg.input(video_filename), output_filename,
-    #                             vcodec="copy", acodec="copy", loglevel="quiet").run(overwrite_output=True)
-    #             print("ok")
-
-    #             # à la fin de l'opération de combinaison => suppr. des fichiers/dossiers temporaires audio/video
-    #             os.remove(audio_filename)
-    #             os.remove(video_filename)
-    #             os.rmdir("audio")
-    #             os.rmdir("video")
-
-    #             break
 
 
 '''
