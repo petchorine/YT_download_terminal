@@ -132,8 +132,15 @@ def get_resolutions_list(playlist, user_quality_choice):
         download_video(lowest_resolutions_list)
 
 
-# url_input = "https://www.youtube.com/playlist?list=PL6wtbJKOh3fGOVxYNrL7nRQT6wcaThm7m"
-# url_input = "https://www.youtube.com/watch?v=LXb3EKWsInQ"
+def on_download_progress(stream, chunk, bytes_remaining):
+    # octets qu'on a déjà téléchargés
+    bytes_downloaded = stream.filesize - bytes_remaining
+    # pourcentage des octets déjà téléchargés
+    percent = int(bytes_downloaded * 100 / stream.filesize)
+
+    print(percent)
+    print(f"Progression du téléchargement: {percent}% - {bytes_remaining}")
+
 
 def download_video(resolutions_list, list_audio=None):
     # TELECHARGEMENT AUDIO
@@ -144,7 +151,10 @@ def download_video(resolutions_list, list_audio=None):
             print("ok")
 
     for stream_video in resolutions_list:
-        if stream_video.is_progressive == False:                  
+        if stream_video.is_progressive == False:   
+            # appel de la méthode "on_download_progress" qui permet l'affichage de la progression
+            # stream_video.register_on_progress_callback(on_download_progress)
+            
             # TELECHARGEMENT VIDEO
             print("Téléchargement video...")
             stream_video.download("video")
@@ -163,9 +173,10 @@ def download_video(resolutions_list, list_audio=None):
             print(f"Téléchargement...")
             stream_video.download()
             print("OK")
+    
     # à la fin de l'opération de combinaison => suppr. des fichiers/dossiers temporaires audio/video
-    shutil.rmtree('audio')
-    shutil.rmtree('video')
+    # shutil.rmtree('audio')
+    # shutil.rmtree('video')
 
 
 def download_audio(playlist_audio_to_download):
@@ -199,26 +210,7 @@ main()
 
 
 
-'''
 
 
 
-# TO DO : affiche l'évolution du chargement dans des progress bar et labels
-# note : marche pour l'instant uniquement dans le terminal
-def on_download_progress(self, stream, chunk, bytes_remaining):
-    # octets qu'on a déjà téléchargés
-    bytes_downloaded = stream.filesize - bytes_remaining
-    # pourcentage des octets déjà téléchargés
-    percent = int(bytes_downloaded * 100 / stream.filesize)
 
-    print(percent)
-    print(f"Progression du téléchargement: {percent}% - {bytes_remaining}")
-
-    # TO DO : afficher l'évolution de la progress bar de chargement et du label
-    # ids.progress_stream_value.value = percent
-    # ids.progress_stream_label.text = f"{str(percent)}%"
-
-    # TO DO : si playlist alors afficher l'évolution de la progress bar (+label) du nbre de videos restant à charger
-
-
-'''
