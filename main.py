@@ -7,14 +7,18 @@ from pytube import Playlist, YouTube
 
 # liens pour les tests
 # playlist courte : https://www.youtube.com/playlist?list=PL6wtbJKOh3fGOVxYNrL7nRQT6wcaThm7m
-# video avec pleins de résolutions : https://www.youtube.com/watch?v=ExKpWKSrOPE
+# video 4k = https://www.youtube.com/watch?v=LXb3EKWsInQ&t=1s
 
 
-# url_input = "https://www.youtube.com/watch?v=iiryoHtOe7g"
-# url_input = "https://www.youtube.com/playlist?list=PL6wtbJKOh3fGOVxYNrL7nRQT6wcaThm7m"
-
-
-selected_resolutions = []
+def introduction():
+    print(""""
+                #####################################
+                #                                   #
+                # Bienvenue dans YOUTUBE DOWNLOADER #
+                #                par                # 
+                #             Petchorine            #
+                #####################################
+    """)
 
 def get_url_and_verify_integrity():
     while True:
@@ -22,11 +26,13 @@ def get_url_and_verify_integrity():
         print("Copier-coller l'url de la video ou la playlist que vous souhaitez télécharger.")
         user_url = input("=> ")
         if user_url.startswith("https://www.youtube.com"):
-            print("url ok")
+            print("L'url est valide. Nous allons pouvoir commencer le téléchargement.")
+            print("\n")
+            print("Voici les clips associés à cette url :")
             print("\n")
             break
         else:
-            print("Erreur dans l'url")
+            print("Il semble qu'il y ait une erreur dans l'url. Essaye de copier à nouveau.")
             continue
     return user_url
 
@@ -58,9 +64,9 @@ def show_playlist(url):
 
 def choice_audio_or_video():    
     print("\n")
-    print("Tu veux télécharger le fichier vidéo ou seulement l'audio ?")
-    print("1 - le (ou les) fichier(s) vidéo")
-    print("2 - seulement le (ou les) fichier(s) audio")
+    print("Tu veux télécharger le(s) clip(s) audio/vidéo ou seulement l'audio ?")
+    print("1 - le(s) clip(s) audio/vidéo")
+    print("2 - seulement l'audio")
     
     user_choice = ""
     while True:
@@ -83,10 +89,15 @@ def resolution_choice(choice_media_type, playlist):
         print(f"1 - {quality[0]}")
         print(f"2 - {quality[1]}")
         print(f"3 - {quality[2]}")
-        user_quality_choice = int(input("=> "))
-        print(f"Tu as choisi : {quality[user_quality_choice - 1]}")
-        print("\n")
-        get_resolutions_list(playlist, user_quality_choice)
+        while True:
+            user_quality_choice = input("=> ")
+            if user_quality_choice == "1" or user_quality_choice == "2" or user_quality_choice == "3":
+                print(f"Tu as choisi : {quality[int(user_quality_choice) - 1]}")
+                print("\n")
+                get_resolutions_list(playlist, int(user_quality_choice))
+            else:
+                print("Tu dois entrer 1, 2 ou 3.")
+                continue
     elif choice_media_type == "2":
         download_audio(playlist)
 
@@ -109,60 +120,48 @@ def get_resolutions_list(playlist, user_quality_choice):
         for idx in range(len(video_stream_list)):
             best_video_stream = video_stream_list[idx][0]
             best_video_resolutions_list.append(best_video_stream)         
-        download_video(best_video_resolutions_list, list_audio=best_audio_resolutions_list)
-    
+        download_video(best_video_resolutions_list, list_audio=best_audio_resolutions_list) 
     
     elif user_quality_choice == 2:
         video_stream_list = []
         for clip in playlist:
             video_stream_list.append(clip.streams.filter(progressive=True, file_extension="mp4", type="video").order_by("resolution").desc())  
-        medium_resolutions_list = []
-        for idx in range(len(resolutions_list)):
-            medium_video_stream = resolutions_list[idx][0]
+        
+        medium_resolutions_list = []        
+        for idx in range(len(video_stream_list)):
+            medium_video_stream = video_stream_list[idx][0]
             medium_resolutions_list.append(medium_video_stream)
         download_video(medium_resolutions_list)
+    
     elif user_quality_choice == 3:
-        resolutions_list = []
+        video_stream_list = []
         for clip in playlist:
-            resolutions_list.append(clip.streams.filter(progressive=True, file_extension="mp4", type="video").order_by("resolution").desc())  
+            video_stream_list.append(clip.streams.filter(progressive=True, file_extension="mp4", type="video").order_by("resolution").desc())  
+        
         lowest_resolutions_list = []
-        for idx in range(len(resolutions_list)):
-            lowest_video_stream = resolutions_list[idx][-1]
+        for idx in range(len(video_stream_list)):
+            lowest_video_stream = video_stream_list[idx][-1]
             lowest_resolutions_list.append(lowest_video_stream)
         download_video(lowest_resolutions_list)
-
-
-def on_download_progress(stream, chunk, bytes_remaining):
-    # octets qu'on a déjà téléchargés
-    bytes_downloaded = stream.filesize - bytes_remaining
-    # pourcentage des octets déjà téléchargés
-    percent = int(bytes_downloaded * 100 / stream.filesize)
-
-    print(percent)
-    print(f"Progression du téléchargement: {percent}% - {bytes_remaining}")
-
 
 def download_video(resolutions_list, list_audio=None):
     # TELECHARGEMENT AUDIO
     if list_audio is not None:
         for best_audio in list_audio:
             print("Téléchargement audio...")
-            best_audio.download("audio")
+            best_audio.download("audio_ytdown")
             print("ok")
 
     for stream_video in resolutions_list:
-        if stream_video.is_progressive == False:   
-            # appel de la méthode "on_download_progress" qui permet l'affichage de la progression
-            # stream_video.register_on_progress_callback(on_download_progress)
-            
+        if stream_video.is_progressive == False:               
             # TELECHARGEMENT VIDEO
             print("Téléchargement video...")
-            stream_video.download("video")
+            stream_video.download("video_ytdown")
             print("OK")
 
             # COMBINAISON DES FICHIERS AUDIO ET VIDEO
-            audio_filename = os.path.join("audio", best_audio.default_filename)
-            video_filename = os.path.join("video", stream_video.default_filename)
+            audio_filename = os.path.join("audio_ytdown", best_audio.default_filename)
+            video_filename = os.path.join("video_ytdown", stream_video.default_filename)
             output_filename = stream_video.default_filename
 
             print("Combinaison des fichiers...")
@@ -173,10 +172,12 @@ def download_video(resolutions_list, list_audio=None):
             print(f"Téléchargement...")
             stream_video.download()
             print("OK")
-    
     # à la fin de l'opération de combinaison => suppr. des fichiers/dossiers temporaires audio/video
-    # shutil.rmtree('audio')
-    # shutil.rmtree('video')
+    # si les dossiers ont été crées (dans le cas qualité optimale seulement) / pas d'erreur si autre qualité choisie 
+    if os.path.isdir("audio_ytdown"):
+        shutil.rmtree('audio_ytdown')
+    if os.path.isdir("video_ytdown"):
+        shutil.rmtree('video_ytdown')
 
 
 def download_audio(playlist_audio_to_download):
@@ -199,12 +200,19 @@ def download_audio(playlist_audio_to_download):
 
     return all_best_audio_streams
 
+def ending():
+    print("this is the end")
+
+
+
 def main():
+    introduction()
     user_url_input = get_url_and_verify_integrity()
     is_not_playlist(user_url_input)
     playlist = show_playlist(user_url_input)
     choice_media_type = choice_audio_or_video()
     resolution_choice(choice_media_type, playlist)
+    ending()
 
 main()
 
