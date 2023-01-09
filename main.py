@@ -1,7 +1,9 @@
 import os
 import ffmpeg
 import shutil
-
+import tkinter
+import tkinter.filedialog
+from pathlib import Path
 from pytube import Playlist, YouTube
 
 
@@ -99,7 +101,22 @@ def resolution_choice(choice_media_type, playlist):
                 print("Tu dois entrer 1, 2 ou 3.")
                 continue
     elif choice_media_type == "2":
-        download_audio(playlist)
+        user_directory_choice = directory_choice()
+        download_audio(playlist, user_directory_choice)
+
+
+def directory_choice():
+    # on initialise tkinter en appelant la fonction Tk()
+    racine_tk = tkinter.Tk()
+    # permet de masquer la petite fenêtre supplémentaire (je ne sais pas à quoi elle sert ???)
+    racine_tk.withdraw()
+
+    directory_name = tkinter.filedialog.askdirectory(title='Choisir un dossier')
+    user_directory_choice = Path(directory_name)
+
+    print("Chemin complet du dossier : ", user_directory_choice)
+
+    return user_directory_choice
 
 
 def get_resolutions_list(playlist, user_quality_choice):    
@@ -119,8 +136,9 @@ def get_resolutions_list(playlist, user_quality_choice):
         best_video_resolutions_list = []
         for idx in range(len(video_stream_list)):
             best_video_stream = video_stream_list[idx][0]
-            best_video_resolutions_list.append(best_video_stream)         
-        download_video(best_video_resolutions_list, list_audio=best_audio_resolutions_list) 
+            best_video_resolutions_list.append(best_video_stream)
+        user_directory_choice = directory_choice()
+        download_video(best_video_resolutions_list, user_directory_choice, list_audio=best_audio_resolutions_list) 
     
     elif user_quality_choice == 2:
         video_stream_list = []
@@ -131,7 +149,8 @@ def get_resolutions_list(playlist, user_quality_choice):
         for idx in range(len(video_stream_list)):
             medium_video_stream = video_stream_list[idx][0]
             medium_resolutions_list.append(medium_video_stream)
-        download_video(medium_resolutions_list)
+        user_directory_choice = directory_choice()
+        download_video(medium_resolutions_list, user_directory_choice)
     
     elif user_quality_choice == 3:
         video_stream_list = []
@@ -142,13 +161,16 @@ def get_resolutions_list(playlist, user_quality_choice):
         for idx in range(len(video_stream_list)):
             lowest_video_stream = video_stream_list[idx][-1]
             lowest_resolutions_list.append(lowest_video_stream)
-        download_video(lowest_resolutions_list)
+        user_directory_choice = directory_choice()
+        download_video(lowest_resolutions_list, user_directory_choice)
 
-def download_video(resolutions_list, list_audio=None):
+
+def download_video(resolutions_list, user_directory_choice, list_audio=None):
     # TELECHARGEMENT AUDIO
     if list_audio is not None:
         for best_audio in list_audio:
             print("Téléchargement audio...")
+            # TODO : changer le chemin pour prendre en compte le choix de l'utilisateur
             best_audio.download("audio_ytdown")
             print("ok")
 
@@ -156,12 +178,13 @@ def download_video(resolutions_list, list_audio=None):
         if stream_video.is_progressive == False:               
             # TELECHARGEMENT VIDEO
             print("Téléchargement video...")
+            # TODO : changer le chemin pour prendre en compte le choix de l'utilisateur
             stream_video.download("video_ytdown")
-            print("OK")
+            print("ok")
 
             # COMBINAISON DES FICHIERS AUDIO ET VIDEO
-            audio_filename = os.path.join("audio_ytdown", best_audio.default_filename)
-            video_filename = os.path.join("video_ytdown", stream_video.default_filename)
+            audio_filename = os.path.join(user_directory_choice, "audio_ytdown", best_audio.default_filename)
+            video_filename = os.path.join(user_directory_choice, "video_ytdown", stream_video.default_filename)
             output_filename = stream_video.default_filename
 
             print("Combinaison des fichiers...")
@@ -180,9 +203,9 @@ def download_video(resolutions_list, list_audio=None):
         shutil.rmtree('video_ytdown')
 
 
-def download_audio(playlist_audio_to_download):
+def download_audio(playlist_audio_to_download, user_directory_choice):
     all_audio_streams = []
-    all_best_audio_streams = []
+    # all_best_audio_streams = []
     
     for clip in playlist_audio_to_download:
         audio_stream = clip.streams.filter(progressive=False, file_extension="mp4", type="audio").order_by(
@@ -191,17 +214,18 @@ def download_audio(playlist_audio_to_download):
 
     for stream in all_audio_streams:
         best_stream = stream[0]
-        all_best_audio_streams.append(best_stream)
+        # all_best_audio_streams.append(best_stream)
         print("Téléchargement...")
-        # TODO : je ne sais pas encore comment spécifier mon dossier de téléchargement
-        # sans doute avec le module os
-        best_stream.download()
+        best_stream.download(output_path = user_directory_choice)
         print("OK")
 
-    return all_best_audio_streams
+    # return all_best_audio_streams
 
 def ending():
-    print("this is the end")
+    print("\n")
+    print("Toutes les clips ont bien été téléchargéees ")
+    # TODO : "oui/non" pour nouveau téléchargement
+    # quit() pour quitter le programme
 
 
 
