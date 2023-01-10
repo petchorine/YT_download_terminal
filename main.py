@@ -93,7 +93,7 @@ def resolution_choice(choice_media_type, playlist):
     if choice_media_type == "1":
         quality = ("qualité optimale", "qualité moyenne", "qualité minimale")
         print("\n")
-        print(f"Choisissez la qualité des médias à télécharger :")
+        print(f"Choisis la qualité des médias à télécharger :")
         print(f"   1 - {quality[0]}")
         print(f"   2 - {quality[1]}")
         print(f"   3 - {quality[2]}")
@@ -111,7 +111,6 @@ def resolution_choice(choice_media_type, playlist):
         user_directory_choice = directory_choice()
         download_audio(playlist, user_directory_choice)
 
-
 def directory_choice():
     # on initialise tkinter en appelant la fonction Tk()
     racine_tk = tkinter.Tk()
@@ -119,7 +118,10 @@ def directory_choice():
     racine_tk.withdraw()
 
     print("Dans quel dossier souhaites-tu télécharger tes clips ?")
+    print("Note : si tu ne vois pas la fenêtre de choix, elle peut être cachée derrière la fenêtre du script !")
     directory_name = tkinter.filedialog.askdirectory(title='Choisir un dossier')
+    
+    
     if len(directory_name) != 0:
         user_directory_choice = Path(directory_name)
     else:
@@ -217,7 +219,7 @@ def download_video(resolutions_list, user_directory_choice, list_audio=None):
 
 def download_audio(playlist_audio_to_download, user_directory_choice):
     all_audio_streams = []
-    
+    print("\n")
     for clip in playlist_audio_to_download:
         audio_stream = clip.streams.filter(progressive=False, file_extension="mp4", type="audio").order_by(
         "abr").desc()
@@ -232,10 +234,7 @@ def download_audio(playlist_audio_to_download, user_directory_choice):
 
 def ending():
     print("\n")
-    download_directory = directory_choice()
-    # TODO : ajouter dans quel dossier les clips ont été teléchargés 
     print(f"Tous les clips ont bien été téléchargés...")
-    print(f"Vous le(s) trouverez dans le dossier suivant : {download_directory}")
     print("\n")
     print("Veux-tu télécharger autre chose ?")
     print("   1 - oui")
@@ -243,13 +242,12 @@ def ending():
     while True:
         user_reload_choice = input("=> ")
         if user_reload_choice == "1":
-            get_url_and_verify_integrity()
+            main()
         elif user_reload_choice == "2":
             quit()
         else:
             print("Tu dois choisir soit 1, soit 2.")
             continue
-
 
 
 def main():
