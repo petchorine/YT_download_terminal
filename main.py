@@ -131,8 +131,8 @@ def directory_choice():
 
     return user_directory_choice
 
-
 def get_resolutions_list(playlist, user_quality_choice):    
+    user_directory_choice = directory_choice()
     if user_quality_choice == 1:
         video_stream_list = []
         audio_stream_list = []
@@ -150,32 +150,23 @@ def get_resolutions_list(playlist, user_quality_choice):
         for idx in range(len(video_stream_list)):
             best_video_stream = video_stream_list[idx][0]
             best_video_resolutions_list.append(best_video_stream)
-        user_directory_choice = directory_choice()
+        
         download_video(best_video_resolutions_list, user_directory_choice, list_audio=best_audio_resolutions_list) 
-    
-    elif user_quality_choice == 2:
+    else:
         video_stream_list = []
+        resolutions_list = []        
         for clip in playlist:
             video_stream_list.append(clip.streams.filter(progressive=True, file_extension="mp4", type="video").order_by("resolution").desc())  
+        if user_quality_choice == 2:                   
+            for idx in range(len(video_stream_list)):
+                medium_video_stream = video_stream_list[idx][0]
+                resolutions_list.append(medium_video_stream)
         
-        medium_resolutions_list = []        
-        for idx in range(len(video_stream_list)):
-            medium_video_stream = video_stream_list[idx][0]
-            medium_resolutions_list.append(medium_video_stream)
-        user_directory_choice = directory_choice()
-        download_video(medium_resolutions_list, user_directory_choice)
-    
-    elif user_quality_choice == 3:
-        video_stream_list = []
-        for clip in playlist:
-            video_stream_list.append(clip.streams.filter(progressive=True, file_extension="mp4", type="video").order_by("resolution").desc())  
-        
-        lowest_resolutions_list = []
-        for idx in range(len(video_stream_list)):
-            lowest_video_stream = video_stream_list[idx][-1]
-            lowest_resolutions_list.append(lowest_video_stream)
-        user_directory_choice = directory_choice()
-        download_video(lowest_resolutions_list, user_directory_choice)
+        elif user_quality_choice == 3:
+            for idx in range(len(video_stream_list)):
+                lowest_video_stream = video_stream_list[idx][-1]
+                resolutions_list.append(lowest_video_stream)
+        download_video(resolutions_list, user_directory_choice)
 
 
 def download_video(resolutions_list, user_directory_choice, list_audio=None):
