@@ -10,16 +10,18 @@ from pytube import Playlist, YouTube
 # liens pour les tests
 # playlist courte : https://www.youtube.com/playlist?list=PL6wtbJKOh3fGOVxYNrL7nRQT6wcaThm7m
 # video 4k = https://www.youtube.com/watch?v=LXb3EKWsInQ&t=1s
+# video 1080 = https://www.youtube.com/watch?v=6kqivnW1OBM
 
 
 def introduction():
     print(""""
-                #####################################
-                #                                   #
-                # Bienvenue dans YOUTUBE DOWNLOADER #
-                #                par                # 
-                #             Petchorine            #
-                #####################################
+                #########################################
+                #                                       #
+                #   Bienvenue dans YOUTUBE DOWNLOADER   #
+                #                  par                  # 
+                #               Petchorine              #
+                #                                       #
+                #########################################
     """)
 
 def get_url_and_verify_integrity():
@@ -57,9 +59,13 @@ def show_playlist(url):
             youtube_video = YouTube(url)
             playlist_youtube_video.append(youtube_video) 
     
-
+    print("Titre(s)" + (45 * ' ') + "Durée")
+    print((50 * '=') + '   ' + (5 * '='))
     for youtube_video in playlist_youtube_video:
-        print(f"{youtube_video.title} - {str(youtube_video.length//60)}.{str(youtube_video.length%60)}")
+        if len(youtube_video.title) > 50:
+            print(f"{youtube_video.title[:45]}...     {str(youtube_video.length//60)}.{str(youtube_video.length%60)}")
+        else:
+            print(youtube_video.title + ((53 - len(youtube_video.title)) * ' ') + str(youtube_video.length//60) + '.' +str(youtube_video.length%60))
     
     return playlist_youtube_video
   
@@ -67,8 +73,8 @@ def show_playlist(url):
 def choice_audio_or_video():    
     print("\n")
     print("Tu veux télécharger le(s) clip(s) audio/vidéo ou seulement l'audio ?")
-    print("1 - le(s) clip(s) audio/vidéo")
-    print("2 - seulement l'audio")
+    print("   1 - le(s) clip(s) audio/vidéo")
+    print("   2 - seulement l'audio")
     
     user_choice = ""
     while True:
@@ -88,18 +94,19 @@ def resolution_choice(choice_media_type, playlist):
         quality = ("qualité optimale", "qualité moyenne", "qualité minimale")
         print("\n")
         print(f"Choisissez la qualité des médias à télécharger :")
-        print(f"1 - {quality[0]}")
-        print(f"2 - {quality[1]}")
-        print(f"3 - {quality[2]}")
+        print(f"   1 - {quality[0]}")
+        print(f"   2 - {quality[1]}")
+        print(f"   3 - {quality[2]}")
         while True:
             user_quality_choice = input("=> ")
             if user_quality_choice == "1" or user_quality_choice == "2" or user_quality_choice == "3":
                 print(f"Tu as choisi : {quality[int(user_quality_choice) - 1]}")
                 print("\n")
-                get_resolutions_list(playlist, int(user_quality_choice))
+                break
             else:
                 print("Tu dois entrer 1, 2 ou 3.")
                 continue
+        get_resolutions_list(playlist, int(user_quality_choice))
     elif choice_media_type == "2":
         user_directory_choice = directory_choice()
         download_audio(playlist, user_directory_choice)
@@ -111,9 +118,13 @@ def directory_choice():
     # permet de masquer la petite fenêtre supplémentaire (je ne sais pas à quoi elle sert ???)
     racine_tk.withdraw()
 
+    print("Dans quel dossier souhaites-tu télécharger tes clips ?")
     directory_name = tkinter.filedialog.askdirectory(title='Choisir un dossier')
-    user_directory_choice = Path(directory_name)
-
+    if len(directory_name) != 0:
+        user_directory_choice = Path(directory_name)
+    else:
+        script_directory = os.path.realpath(__file__)
+        user_directory_choice = os.path.dirname(script_directory)    
     print("Chemin complet du dossier : ", user_directory_choice)
 
     return user_directory_choice
@@ -167,25 +178,25 @@ def get_resolutions_list(playlist, user_quality_choice):
 
 def download_video(resolutions_list, user_directory_choice, list_audio=None):
     # TELECHARGEMENT AUDIO
+    audio_temp_directory = fr"{user_directory_choice}\audio_ytdown"
     if list_audio is not None:
         for best_audio in list_audio:
             print("Téléchargement audio...")
-            # TODO : changer le chemin pour prendre en compte le choix de l'utilisateur
-            best_audio.download("audio_ytdown")
+            best_audio.download(audio_temp_directory)
             print("ok")
 
+    video_temp_directory = fr"{user_directory_choice}\video_ytdown"  
     for stream_video in resolutions_list:
-        if stream_video.is_progressive == False:               
+        if stream_video.is_progressive == False:     
             # TELECHARGEMENT VIDEO
-            print("Téléchargement video...")
-            # TODO : changer le chemin pour prendre en compte le choix de l'utilisateur
-            stream_video.download("video_ytdown")
+            print("Téléchargement video...")            
+            stream_video.download(video_temp_directory)
             print("ok")
 
             # COMBINAISON DES FICHIERS AUDIO ET VIDEO
             audio_filename = os.path.join(user_directory_choice, "audio_ytdown", best_audio.default_filename)
             video_filename = os.path.join(user_directory_choice, "video_ytdown", stream_video.default_filename)
-            output_filename = stream_video.default_filename
+            output_filename = os.path.join(user_directory_choice, stream_video.default_filename)
 
             print("Combinaison des fichiers...")
             ffmpeg.output(ffmpeg.input(audio_filename), ffmpeg.input(video_filename), output_filename,
@@ -193,19 +204,19 @@ def download_video(resolutions_list, user_directory_choice, list_audio=None):
             print("ok")
         else:
             print(f"Téléchargement...")
-            stream_video.download()
+            stream_video.download(user_directory_choice)
             print("OK")
+    
     # à la fin de l'opération de combinaison => suppr. des fichiers/dossiers temporaires audio/video
     # si les dossiers ont été crées (dans le cas qualité optimale seulement) / pas d'erreur si autre qualité choisie 
-    if os.path.isdir("audio_ytdown"):
-        shutil.rmtree('audio_ytdown')
-    if os.path.isdir("video_ytdown"):
-        shutil.rmtree('video_ytdown')
+    if os.path.isdir(audio_temp_directory):
+        shutil.rmtree(audio_temp_directory)
+    if os.path.isdir(video_temp_directory):
+        shutil.rmtree(video_temp_directory)
 
 
 def download_audio(playlist_audio_to_download, user_directory_choice):
     all_audio_streams = []
-    # all_best_audio_streams = []
     
     for clip in playlist_audio_to_download:
         audio_stream = clip.streams.filter(progressive=False, file_extension="mp4", type="audio").order_by(
@@ -214,18 +225,30 @@ def download_audio(playlist_audio_to_download, user_directory_choice):
 
     for stream in all_audio_streams:
         best_stream = stream[0]
-        # all_best_audio_streams.append(best_stream)
         print("Téléchargement...")
         best_stream.download(output_path = user_directory_choice)
         print("OK")
 
-    # return all_best_audio_streams
 
 def ending():
     print("\n")
-    print("Toutes les clips ont bien été téléchargéees ")
-    # TODO : "oui/non" pour nouveau téléchargement
-    # quit() pour quitter le programme
+    download_directory = directory_choice()
+    # TODO : ajouter dans quel dossier les clips ont été teléchargés 
+    print(f"Tous les clips ont bien été téléchargés...")
+    print(f"Vous le(s) trouverez dans le dossier suivant : {download_directory}")
+    print("\n")
+    print("Veux-tu télécharger autre chose ?")
+    print("   1 - oui")
+    print("   2 - non, je souhaite quitter le programme.")
+    while True:
+        user_reload_choice = input("=> ")
+        if user_reload_choice == "1":
+            get_url_and_verify_integrity()
+        elif user_reload_choice == "2":
+            quit()
+        else:
+            print("Tu dois choisir soit 1, soit 2.")
+            continue
 
 
 
